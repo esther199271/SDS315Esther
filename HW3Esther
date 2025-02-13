@@ -1,0 +1,359 @@
+library(tidyverse)
+library(mosaic)
+
+#________________Problem 1__________________
+gasprices <- read.csv("gasprices.csv")
+
+
+summary(gasprices)
+
+#____________Comparison based on competition
+gasprices_summary_Competitors <- gasprices %>%
+  group_by(Competitors) %>%
+  summarize(
+    meanprice = mean(Price),
+    medianprice = median(Price),
+    sdprice= sd(Price)
+  )
+
+ggplot(gasprices, aes(Competitors, Price)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.5) +
+  labs(title = "Gas Prices Based on Nearby Competition",
+       x = "Competitors Nearby",
+       y = "Price per Gallon")
+
+
+set.seed(123)
+
+# Bootstrap resampling for the difference in means
+boot_diff <- replicate(10000, {
+  sample_yes <- sample(gasprices$Price[gasprices$Competitors == "Y"], size = sum(gasprices$Competitors == "Y"), replace = TRUE)
+  sample_no <- sample(gasprices$Price[gasprices$Competitors == "N"], size = sum(gasprices$Competitors == "N"), replace = TRUE)
+  mean(sample_no) - mean(sample_yes)  # Difference in mean price
+})
+
+# Convert to a data frame
+boot_diff_df <- data.frame(price_diff = boot_diff)
+
+# Compute confidence interval for the difference
+ci_diff_90 <- quantile(boot_diff_df$price_diff, probs = c(0.075, 0.925))
+print(ci_diff_90)
+
+
+#____________Comparison based on income
+
+ggplot(gasprices, aes(x = Income, y = Price)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Gas Prices vs. Median Income",
+       x = "Median Household Income ($)",
+       y = "Gas Price per Gallon") 
+
+lm_price_income = lm(Price ~ Income, data=gasprices)
+coef(lm_price_income)
+
+confint(lm_price_income, level = 0.95)  # 95% Confidence Interval
+
+#____________Comparison based on stoplights
+gasprices_summary_stoplights <- gasprices %>%
+  group_by(Stoplight) %>%
+  summarize(
+    meanprice = mean(Price),
+    medianprice = median(Price),
+    sdprice= sd(Price)
+  )
+gasprices_summary_stoplights
+ggplot(gasprices, aes(Stoplight, Price)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.5) +
+  labs(title = "Gas Prices Based on Stoplights",
+       x = "Existence of Stoplight",
+       y = "Price per Gallon")
+
+#____________Comparison based on Highway
+gasprices_summary_Highway <- gasprices %>%
+  group_by(Highway) %>%
+  summarize(
+    meanprice = mean(Price),
+    medianprice = median(Price),
+    sdprice= sd(Price)
+  )
+gasprices_summary_Highway
+ggplot(gasprices, aes(Highway, Price)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.5) +
+  labs(title = "Gas Prices Based on Highway",
+       x = "Existence of Highway",
+       y = "Price per Gallon")
+
+set.seed(123)
+
+# Bootstrap resampling for the difference in means
+boot_diff <- replicate(10000, {
+  sample_yes <- sample(gasprices$Price[gasprices$set.seed(123)
+
+# Bootstrap resampling for the difference in means
+boot_diff <- replicate(10000, {
+  sample_yes <- sample(gasprices$Price[gasprices$Highway == "Y"], size = sum(gasprices$Highway == "Y"), replace = TRUE)
+  sample_no <- sample(gasprices$Price[gasprices$Highway == "N"], size = sum(gasprices$Highway == "N"), replace = TRUE)
+  mean(sample_no) - mean(sample_yes)  # Difference in mean price
+})
+
+# Convert to a data frame
+boot_diff_df <- data.frame(price_diff = boot_diff)
+
+# Compute confidence interval for the difference
+ci_diff_90 <- quantile(boot_diff_df$price_diff, probs = c(0.075, 0.925))
+print(ci_diff_90)
+ == "Y"], size = sum(gasprices$Highway == "Y"), replace = TRUE)
+  sample_no <- sample(gasprices$Price[gasprices$Highway == "N"], size = sum(gasprices$Highway == "N"), replace = TRUE)
+  mean(sample_no) - mean(sample_yes)  # Difference in mean price
+})
+
+# Convert to a data frame
+boot_diff_df <- data.frame(price_diff = boot_diff)
+
+# Compute confidence interval for the difference
+ci_diff_90 <- quantile(boot_diff_df$price_diff, probs = c(0.075, 0.925))
+print(ci_diff_90)
+
+#____________Comparison based on brand
+
+# Boxplot
+ggplot(gasprices, aes(x = Brand, y = Price)) +
+  geom_boxplot(fill = "blue", alpha = 0.5) +
+  labs(title = "Gas Prices by Brand",
+       x = "Brand",
+       y = "Price per Gallon") +
+  theme_minimal()
+
+# Bootstrap resampling to compute confidence interval for price difference
+set.seed(123)
+
+boot_diff_df <- gasprices %>%
+  mutate(Shell_vs_Others = ifelse(Brand == "Shell", "Shell", "Other")) %>%
+  group_by(Shell_vs_Others) %>%
+  summarise(mean_price = mean(Price)) %>%
+  summarise(price_diff = mean_price[Shell_vs_Others == "Shell"] - mean_price[Shell_vs_Others == "Other"])
+
+# Bootstrap sampling
+boot_samples <- replicate(1000, {
+  sample_diff <- gasprices %>%
+    sample_n(n(), replace = TRUE) %>%
+    mutate(Shell_vs_Others = ifelse(Brand == "Shell", "Shell", "Other")) %>%
+    group_by(Shell_vs_Others) %>%
+    summarise(mean_price = mean(Price)) %>%
+    summarise(price_diff = mean_price[Shell_vs_Others == "Shell"] - mean_price[Shell_vs_Others == "Other"])
+  
+  sample_diff$price_diff
+})
+
+# Compute 85% Confidence Interval
+ci_diff_shell <- quantile(boot_samples, probs = c(0.075, 0.925))
+print(ci_diff_shell)
+
+#________________Problem 2__________________
+sclass <- read.csv("sclass.csv")
+
+# Get summary statistics
+summary(sclass)
+
+#Part A______________
+unique(sclass$trim)
+unique(sclass$year)
+sclass_2011_AMG <- sclass %>%
+  filter(year == 2011 & trim == "63 AMG")
+summary(sclass_partA)
+
+set.seed(123)  
+
+# Bootstrap resampling
+boot_samples <- replicate(1000, {
+  sample_mileage <- sample(sclass_2011_AMG$mileage, size = nrow(sclass_2011_AMG), replace = TRUE)
+  mean(sample_mileage)
+})
+
+# Compute 95% Confidence Interval
+ci_mileage_95 <- quantile(boot_samples, probs = c(0.025, 0.975))
+
+# Print results
+print(ci_mileage_95)
+
+#Part B______________
+
+sclass_2014_550 <- sclass %>%
+  filter(year == 2014 & trim == "550")
+summary(sclass_partA)
+sclass_2014_550 <- sclass_2014_550 %>%
+  mutate(isBlack = ifelse(color == "Black", TRUE, FALSE))
+
+n_boot <- 1000  
+
+# Perform bootstrap resampling
+boot_samples <- replicate(n_boot, {
+  sample_data <- sample(sclass_2014_550$isBlack, size = nrow(sclass_2014_550), replace = TRUE)
+  mean(sample_data)  # Compute proportion of black cars
+})
+
+# Compute 95% Confidence Interval
+ci_black_95 <- quantile(boot_samples, probs = c(0.025, 0.975))
+
+# Print results
+print(ci_black_95)
+
+#________________Problem 3__________________
+#Part A
+nbc_data <- read.csv("nbc_pilotsurvey.csv")
+
+# Filter data for the two shows
+filtered_data <- nbc_data %>%
+  filter(Show %in% c("Living with Ed", "My Name is Earl"))
+
+# Compute observed means
+mean_happy_ed <- filtered_data %>%
+  filter(Show == "Living with Ed") %>%
+  summarise(mean_happy = mean(Q1_Happy))
+
+mean_happy_earl <- filtered_data %>%
+  filter(Show == "My Name is Earl") %>%
+  summarise(mean_happy = mean(Q1_Happy))
+
+# Compute observed difference in means
+observed_diff <- mean_happy_ed$mean_happy - mean_happy_earl$mean_happy
+
+# Bootstrap resampling for 95% confidence interval
+set.seed(123)  # Ensures reproducibility
+n_boot <- 1000
+boot_diffs <- replicate(n_boot, {
+  boot_sample <- filtered_data %>% sample_frac(replace = TRUE)  # Resample with replacement
+  boot_mean_ed <- boot_sample %>%
+    filter(Show == "Living with Ed") %>%
+    summarise(mean_happy = mean(Q1_Happy, na.rm = TRUE)) %>%
+    pull(mean_happy)
+  
+  boot_mean_earl <- boot_sample %>%
+    filter(Show == "My Name is Earl") %>%
+    summarise(mean_happy = mean(Q1_Happy, na.rm = TRUE)) %>%
+    pull(mean_happy)
+  
+  boot_mean_ed - boot_mean_earl
+})
+
+# Compute 95% confidence interval
+ci_95 <- quantile(boot_diffs, probs = c(0.025, 0.975))
+
+print(ci_95)
+print(observed_diff)
+
+#Part B__________
+filtered_data_B <- nbc_data %>%
+  filter(Show %in% c("The Biggest Loser", "The Apprentice: Los Angeles"))
+
+# Compute observed means
+mean_annoyed_loser <- filtered_data_B %>%
+  filter(Show == "The Biggest Loser") %>%
+  summarise(mean_annoyed = mean(Q1_Annoyed, na.rm = TRUE))
+
+mean_annoyed_apprentice <- filtered_data_B %>%
+  filter(Show == "The Apprentice: Los Angeles") %>%
+  summarise(mean_annoyed = mean(Q1_Annoyed, na.rm = TRUE))
+
+# Compute observed difference in means
+observed_diff_B <- mean_annoyed_loser$mean_annoyed - mean_annoyed_apprentice$mean_annoyed
+
+# Bootstrap resampling for 95% confidence interval
+set.seed(123)  # Ensures reproducibility
+n_boot <- 1000
+boot_diffs_B <- replicate(n_boot, {
+  boot_sample_B <- filtered_data_B %>% sample_frac(replace = TRUE)
+  
+  boot_mean_loser <- boot_sample_B %>%
+    filter(Show == "The Biggest Loser") %>%
+    summarise(mean_annoyed = mean(Q1_Annoyed, na.rm = TRUE)) %>%
+    pull(mean_annoyed)
+  
+  boot_mean_apprentice <- boot_sample_B %>%
+    filter(Show == "The Apprentice: Los Angeles") %>%
+    summarise(mean_annoyed = mean(Q1_Annoyed, na.rm = TRUE)) %>%
+    pull(mean_annoyed)
+  
+  boot_mean_loser - boot_mean_apprentice
+})
+
+# Compute 95% confidence interval
+ci_95_B <- quantile(boot_diffs_B, probs = c(0.025, 0.975))
+
+# Print results
+print(ci_95_B)
+print(observed_diff_B)
+
+#Part C__________
+# Filter data for "Dancing with the Stars"
+filtered_data_C <- nbc_data %>%
+  filter(Show == "Dancing with the Stars")
+
+filtered_data_C <- filtered_data_C %>%
+  mutate(is_confusing = ifelse(Q2_Confusing >= 4, 1, 0))
+
+# Compute observed proportion of people who found it confusing
+observed_prop_C <- mean(filtered_data_C$is_confusing, na.rm = TRUE)
+
+# Bootstrap resampling for 95% confidence interval
+set.seed(123)  # Ensures reproducibility
+n_boot <- 1000
+boot_props_C <- replicate(n_boot, {
+  boot_sample_C <- sample(filtered_data_C$is_confusing, 
+                          size = nrow(filtered_data_C), replace = TRUE)
+  mean(boot_sample_C)
+})
+
+# Compute 95% confidence interval
+ci_95_C <- quantile(boot_props_C, probs = c(0.025, 0.975))
+
+
+print(ci_95_C)
+print(observed_prop_C)
+
+#________________Problem 4__________________
+ebay_data <- read.csv("ebay.csv")
+
+ebay_data <- ebay_data %>%
+  mutate(revenue_ratio = rev_after / rev_before)
+
+# Compute the observed difference in mean revenue ratio between treatment and control groups
+mean_treatment <- ebay_data %>%
+  filter(adwords_pause == 1) %>%
+  summarise(mean_ratio = mean(revenue_ratio, na.rm = TRUE)) %>%
+  pull(mean_ratio)
+
+mean_control <- ebay_data %>%
+  filter(adwords_pause == 0) %>%
+  summarise(mean_ratio = mean(revenue_ratio, na.rm = TRUE)) %>%
+  pull(mean_ratio)
+
+observed_diff <- mean_treatment - mean_control
+
+# Bootstrap resampling for 95% confidence interval
+set.seed(123)  # Ensures reproducibility
+n_boot <- 1000  
+
+boot_diffs <- replicate(n_boot, {
+  boot_sample <- ebay_data %>% sample_frac(replace = TRUE)
+  
+  boot_mean_treatment <- boot_sample %>%
+    filter(adwords_pause == 1) %>%
+    summarise(mean_ratio = mean(revenue_ratio, na.rm = TRUE)) %>%
+    pull(mean_ratio)
+  
+  boot_mean_control <- boot_sample %>%
+    filter(adwords_pause == 0) %>%
+    summarise(mean_ratio = mean(revenue_ratio, na.rm = TRUE)) %>%
+    pull(mean_ratio)
+  
+  boot_mean_treatment - boot_mean_control
+})
+
+# Compute 95% confidence interval
+ci_95 <- quantile(boot_diffs, probs = c(0.025, 0.975))
+
+
+print(observed_diff)
+print(ci_95)
