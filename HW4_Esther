@@ -1,0 +1,149 @@
+#_________________PROBLEM 1_____________________
+library(tidyverse)
+library(mosaic)
+
+sim_violationoflaw=do(100000)*nflip(n=2021, prob=0.024)
+
+ggplot(sim_violationoflaw) +
+  geom_histogram(aes(x=nflip), binwidth = 1)
+
+#p-value
+a<- sum(sim_violationoflaw >= 73)
+result <- a/100000
+result
+
+
+#_________________PROBLEM 2_____________________
+
+
+sim_violationoflaw=do(100000)*nflip(n=50, prob=0.03)
+
+ggplot(sim_violationoflaw) +
+  geom_histogram(aes(x=nflip), binwidth = 1)
+
+#p-value
+a<- sum(sim_violationoflaw >= 8)
+result <- a/100000
+result
+
+#_________________PROBLEM 3_____________________
+
+expected_distribution = c("G1" = 0.3, "G2" = 0.25, "G3" = 0.2, "G4" = 0.15, "G5" = 0.1)
+observed_counts =  c("G1" = 85, "G2" = 56, "G3" = 59, "G4" = 27, "G5" = 13)
+sum(observed_counts)
+
+tibble(observed = observed_counts, expected = expected_distribution*240)
+
+# "multinomial sampling" equals sampling from a named set of categories
+num_members = 240
+simulated_counts = rmultinom(1, num_members, expected_distribution)
+
+
+# compare "actual" with expected counts
+simulated_counts - num_members*expected_distribution
+
+
+# Define a function to calculate the chi-squared statistic
+chi_squared_statistic = function(observed, expected) {
+  sum((observed - expected)^2 / expected)
+}
+
+
+# Let's repeat this:
+num_simulations = 10000
+chi2_sim = do(num_simulations)*{
+  simulated_counts = rmultinom(1, num_members, expected_distribution)
+  this_chi2 = chi_squared_statistic(simulated_counts, num_members*expected_distribution)
+  c(chi2 = this_chi2) # return a vector with names and values
+}
+
+ggplot(chi2_sim) + 
+  geom_histogram(aes(x=chi2))
+
+
+# our data
+my_chi2 = chi_squared_statistic(observed_counts, num_members*expected_distribution)
+my_chi2
+
+# p value?
+p_value <- mean(chi2_sim$chi2 >= my_chi2)
+
+ggplot(chi2_sim, aes(x=chi2)) +
+  geom_histogram(binwidth=1, fill="steelblue", color="black") +
+  geom_vline(xintercept = my_chi2, color="red", linetype="solid", size=1) +
+  labs(title="Chi-square simulated distribution",
+       x="Chi-square simulated",
+       y="Frequency") +
+  theme_minimal()
+
+cat("Observed chi square statistc:", my_chi2, "\n")
+cat("p-value :", p_value, "\n")
+
+
+#_________________PROBLEM 4_____________________
+
+
+#Part A
+
+letter_freq <- read.csv("letter_frequencies.csv", stringsAsFactors = FALSE)
+
+letter_freq$Probability <- letter_freq$Probability / sum(letter_freq$Probability)
+
+
+calculate_chi_squared <- function(sentence, freq_table) {
+  # Normalize
+  freq_table$Probability <- freq_table$Probability / sum(freq_table$Probability)
+  
+  # Preproccesing
+  clean_sentence <- gsub("[^A-Za-z]", "", sentence)
+  clean_sentence <- toupper(clean_sentence)
+  
+  observed_counts <- table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+  
+  total_letters <- sum(observed_counts)
+  expected_counts <- total_letters * freq_table$Probability
+  
+  
+  chi_sq_stat <- sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_sq_stat)
+}
+
+# Reading the file
+brown_sentences <- readLines("brown_sentences.txt")
+
+chi_sq_reference <- sapply(brown_sentences, calculate_chi_squared, freq_table = letter_freq)
+chi_sq_reference <- chi_sq_reference[!is.na(chi_sq_reference)]
+
+hist(chi_sq_reference, breaks = 50, col = "lightgray",
+     main = "Chi-square statistic distribution\n(Sentences of Brown Corpus)",
+     xlab = "Chi-square statistic")
+
+#Part B
+
+sentences10 <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+chi_sq_sentences10 <- sapply(sentences10, calculate_chi_squared, freq_table = letter_freq)
+
+p_values <- sapply(chi_sq_sentences10, function(x) mean(chi_sq_reference >= x))
+
+results_df <- data.frame(
+  Sentence = 1:10,
+  Chi_Squared = round(chi_sq_sentences10, 2),
+  P_Value = round(p_values, 3)
+)
+
+print(results_df)
+
+
